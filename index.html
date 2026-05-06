@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gumite Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a14;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #12122a;
+            border-radius: 20px;
+            padding: 35px 30px;
+            max-width: 500px;
+            width: 100%;
+            border: 1px solid #1e1e3a;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .logo { text-align: center; margin-bottom: 8px; }
+        .logo-icon {
+            width: 55px; height: 65px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            clip-path: polygon(50% 0%, 95% 20%, 95% 65%, 50% 95%, 5% 65%, 5% 20%);
+            margin: 0 auto 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon span { color: white; font-size: 22px; font-weight: bold; }
+        h1 { text-align: center; font-size: 22px; margin-bottom: 2px; }
+        .subtitle { text-align: center; color: #888; font-size: 12px; margin-bottom: 25px; }
+
+        /* Login */
+        .login-box label { color: #a78bfa; font-size: 11px; font-weight: bold; letter-spacing: 1px; display: block; margin-bottom: 6px; }
+        .login-box input {
+            width: 100%; padding: 13px 15px; border-radius: 10px;
+            border: 1px solid #1e1e3a; background: #0a0a14;
+            color: white; font-size: 14px; outline: none; margin-bottom: 12px;
+        }
+        .login-box input:focus { border-color: #667eea; }
+        .btn {
+            width: 100%; padding: 13px; border-radius: 10px; border: none;
+            font-size: 15px; font-weight: bold; cursor: pointer; color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; }
+        .error-msg { color: #ef4444; font-size: 12px; text-align: center; margin-top: 8px; display: none; }
+
+        /* Admin Panel */
+        .admin-panel { display: none; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .top-bar span { color: #10b981; font-size: 13px; }
+        .logout-btn { background: none; border: 1px solid #ef4444; color: #ef4444; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab {
+            flex: 1; padding: 10px; border-radius: 10px; text-align: center;
+            border: 1px solid #1e1e3a; background: #0a0a14; color: #888;
+            cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s;
+        }
+        .tab.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .panel label { color: #a78bfa; font-size: 11px; font-weight: bold; letter-spacing: 1px; display: block; margin-bottom: 6px; }
+        .panel input {
+            width: 100%; padding: 13px 15px; border-radius: 10px;
+            border: 1px solid #1e1e3a; background: #0a0a14;
+            color: white; font-size: 14px; outline: none; margin-bottom: 12px;
+        }
+        .panel input:focus { border-color: #667eea; }
+        .panel .btn { margin-top: 4px; }
+
+        .result-box {
+            margin-top: 15px; padding: 16px; border-radius: 10px;
+            background: #0a0a14; border: 1px solid #1e1e3a; display: none;
+        }
+        .result-box .label { color: #888; font-size: 10px; letter-spacing: 1px; margin-bottom: 6px; }
+        .result-box .code { color: #10b981; font-size: 22px; font-weight: bold; letter-spacing: 2px; word-break: break-all; }
+        .copy-btn {
+            margin-top: 10px; padding: 7px 14px; border-radius: 6px;
+            background: #1e1e3a; color: #a78bfa; border: 1px solid #2e2e4a;
+            cursor: pointer; font-size: 11px;
+        }
+        .copied-text { color: #10b981; font-size: 10px; margin-top: 5px; display: none; }
+        .footer { text-align: center; color: #555; font-size: 10px; margin-top: 25px; }
+
+        @keyframes shake {
+            0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon"><span>G</span></div>
+        </div>
+        <h1>Gumite Admin</h1>
+        <p class="subtitle" id="statusText">Secure Login Required</p>
+
+        <!-- ========== LOGIN ========== -->
+        <div class="login-box" id="loginBox">
+            <label>USERNAME</label>
+            <input type="text" id="username" placeholder="Enter username" autocomplete="off">
+            <label>PASSWORD</label>
+            <input type="password" id="password" placeholder="Enter password" autocomplete="off">
+            <button class="btn" id="loginBtn">🔐 Sign In</button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+
+        <!-- ========== ADMIN PANEL ========== -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="top-bar">
+                <span>✅ Logged in as Admin</span>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="launcher">🔐 Launcher Pro</div>
+                <div class="tab" data-tab="applock">🔒 App Lock</div>
+            </div>
+
+            <!-- Launcher Panel -->
+            <div class="panel active" id="panel-launcher">
+                <label>DEVICE ID</label>
+                <input type="text" id="launcherDeviceId" placeholder="Paste device ID here" autocomplete="off">
+                <label>ADMIN KEY</label>
+                <input type="password" id="launcherAdminKey" placeholder="Enter admin key" autocomplete="off">
+                <button class="btn" id="genLauncherBtn">🔑 Generate Unlock Code</button>
+                <div class="error-msg" id="launcherError"></div>
+                <div class="result-box" id="launcherResult">
+                    <div class="label">UNLOCK CODE</div>
+                    <div class="code" id="launcherCode"></div>
+                    <button class="copy-btn" data-target="launcherCode">📋 Copy Code</button>
+                    <div class="copied-text" id="launcherCopied">✓ Copied!</div>
+                </div>
+            </div>
+
+            <!-- App Lock Panel -->
+            <div class="panel" id="panel-applock">
+                <label>DEVICE ID</label>
+                <input type="text" id="applockDeviceId" placeholder="Paste device ID here" autocomplete="off">
+                <button class="btn btn-gold" id="genApplockBtn">🔑 Generate Code</button>
+                <div class="error-msg" id="applockError"></div>
+                <div class="result-box" id="applockResult">
+                    <div class="label">ACTIVATION CODE</div>
+                    <div class="code" id="applockCode"></div>
+                    <button class="copy-btn" data-target="applockCode">📋 Copy Code</button>
+                    <div class="copied-text" id="applockCopied">✓ Copied!</div>
+                </div>
+            </div>
+        </div>
+
+        <p class="footer">Gumite © 2024 • Built by Marvic Ranger 🇺🇬</p>
+    </div>
+
+    <script>
+        const ADMIN_USER = 'marvic';
+        const ADMIN_PASS = 'gumite2024admin';
+        const SESSION_TIME = 30 * 60 * 1000;
+        let sessionTimer;
+
+        // ========== LOGIN ==========
+        document.getElementById('loginBtn').addEventListener('click', login);
+        document.getElementById('password').addEventListener('keypress', function(e) { if(e.key==='Enter') login(); });
+        document.getElementById('username').addEventListener('keypress', function(e) { if(e.key==='Enter') document.getElementById('password').focus(); });
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        function login() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const err = document.getElementById('loginError');
+            
+            if (!u || !p) { err.textContent = 'Enter username and password'; err.style.display = 'block'; return; }
+            
+            if (u === ADMIN_USER && p === ADMIN_PASS) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('statusText').textContent = 'Welcome, Admin';
+                document.getElementById('statusText').style.color = '#10b981';
+                err.style.display = 'none';
+                sessionStorage.setItem('gauth', '1');
+                sessionStorage.setItem('gtime', Date.now());
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                resetTimer();
+            } else {
+                err.textContent = '❌ Invalid credentials';
+                err.style.display = 'block';
+                document.getElementById('loginBox').style.animation = 'shake 0.5s';
+                setTimeout(() => document.getElementById('loginBox').style.animation = '', 500);
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('gauth');
+            sessionStorage.removeItem('gtime');
+            document.getElementById('loginBox').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('statusText').textContent = 'Secure Login Required';
+            document.getElementById('statusText').style.color = '#888';
+            clearTimeout(sessionTimer);
+        }
+
+        function resetTimer() {
+            clearTimeout(sessionTimer);
+            sessionTimer = setTimeout(() => { logout(); alert('Session expired.'); }, SESSION_TIME);
+        }
+
+        // Check session
+        (function() {
+            const auth = sessionStorage.getItem('gauth');
+            const time = parseInt(sessionStorage.getItem('gtime')||'0');
+            if (auth === '1' && (Date.now() - time) < SESSION_TIME) {
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('statusText').textContent = 'Welcome, Admin';
+                document.getElementById('statusText').style.color = '#10b981';
+                resetTimer();
+            }
+        })();
+
+        // ========== TABS ==========
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ========== LAUNCHER CODE ==========
+        document.getElementById('genLauncherBtn').addEventListener('click', function() {
+            resetTimer();
+            const deviceId = document.getElementById('launcherDeviceId').value.trim();
+            const adminKey = document.getElementById('launcherAdminKey').value.trim();
+            const err = document.getElementById('launcherError');
+            const result = document.getElementById('launcherResult');
+            
+            if (!deviceId || !adminKey) { err.textContent = 'Fill all fields'; err.style.display = 'block'; return; }
+            
+            err.style.display = 'none';
+            this.textContent = 'Generating...';
+            this.disabled = true;
+            
+            fetch('/.netlify/functions/launcher', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({device_id: deviceId, admin_key: adminKey})
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.textContent = '🔑 Generate Unlock Code';
+                this.disabled = false;
+                if (data.error) { err.textContent = data.error; err.style.display = 'block'; result.style.display = 'none'; }
+                else { document.getElementById('launcherCode').textContent = data.code; result.style.display = 'block'; }
+            })
+            .catch(e => {
+                this.textContent = '🔑 Generate Unlock Code';
+                this.disabled = false;
+                err.textContent = 'Server error'; err.style.display = 'block';
+            });
+        });
+
+        // ========== APP LOCK CODE ==========
+        document.getElementById('genApplockBtn').addEventListener('click', function() {
+            resetTimer();
+            const deviceId = document.getElementById('applockDeviceId').value.trim().toUpperCase();
+            const err = document.getElementById('applockError');
+            const result = document.getElementById('applockResult');
+            
+            if (!deviceId || deviceId.length < 4) { err.textContent = 'Device ID required (min 4 chars)'; err.style.display = 'block'; return; }
+            
+            err.style.display = 'none';
+            this.textContent = 'Generating...';
+            this.disabled = true;
+            
+            fetch('/.netlify/functions/applock', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({device_id: deviceId})
+            })
+            .then(r => r.json())
+            .then(data => {
+                this.textContent = '🔑 Generate Code';
+                this.disabled = false;
+                if (data.error) { err.textContent = data.error; err.style.display = 'block'; result.style.display = 'none'; }
+                else { document.getElementById('applockCode').textContent = data.code; result.style.display = 'block'; }
+            })
+            .catch(e => {
+                this.textContent = '🔑 Generate Code';
+                this.disabled = false;
+                err.textContent = 'Server error'; err.style.display = 'block';
+            });
+        });
+
+        // ========== COPY ==========
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const text = document.getElementById(this.dataset.target).textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const copiedEl = document.getElementById(this.dataset.target.replace('Code','Copied'));
+                    copiedEl.style.display = 'block';
+                    setTimeout(() => copiedEl.style.display = 'none', 2000);
+                });
+            });
+        });
+
+        // ========== ENTER KEY ==========
+        document.querySelectorAll('.panel input').forEach(input => {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const panel = this.closest('.panel');
+                    if (panel.id === 'panel-launcher') document.getElementById('genLauncherBtn').click();
+                    else document.getElementById('genApplockBtn').click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>pe': 'application/json' },
+                    body: JSON.stringify({ device_id: deviceId })
+                })
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    btn.textContent = '🔑 Generate Code';
+                    btn.disabled = false;
+                    
+                    if (data.error) {
+                        error.textContent = data.error;
+                        error.style.display = 'block';
+                        result.style.display = 'none';
+                    } else {
+                        error.style.display = 'none';
+                        document.getElementById('applockCode').textContent = data.code;
+                        result.style.display = 'block';
+                    }
+                })
+                .catch(function(e) {
+                    btn.textContent = '🔑 Generate Code';
+                    btn.disabled = false;
+                    error.textContent = 'Network error. Check your connection.';
+                    error.style.display = 'block';
+                });
+            });
+
+            // ==================== COPY TO CLIPBOARD ====================
+            document.querySelectorAll('.copy-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var targetId = this.getAttribute('data-target');
+                    var text = document.getElementById(targetId).textContent;
+                    navigator.clipboard.writeText(text).then(function() {
+                        var copiedId = targetId.replace('Code', 'Copied');
+                        var copiedEl = document.getElementById(copiedId);
+                        if (copiedEl) {
+                            copiedEl.style.display = 'block';
+                            setTimeout(function() { copiedEl.style.display = 'none'; }, 2000);
+                        }
+                    });
+                });
+            });
+
+            // Enter key for inputs
+            document.querySelectorAll('.panel input').forEach(function(input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        var panel = this.closest('.panel');
+                        if (panel && panel.id === 'panel-launcher') {
+                            document.getElementById('genLauncherBtn').click();
+                        } else if (panel && panel.id === 'panel-applock') {
+                            document.getElementById('genApplockBtn').click();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>  // ==================== COPY TO CLIPBOARD ====================
+            document.querySelectorAll('.copy-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var targetId = this.getAttribute('data-target');
+                    var text = document.getElementById(targetId).textContent;
+                    
+                    navigator.clipboard.writeText(text).then(function() {
+                        var copiedId = targetId.replace('Code', 'Copied');
+                        var copiedEl = document.getElementById(copiedId);
+                        if (copiedEl) {
+                            copiedEl.style.display = 'block';
+                            setTimeout(function() {
+                                copiedEl.style.display = 'none';
+                            }, 2000);
+                        }
+                    });
+                });
+            });
+
+            // ==================== ENTER KEY FOR INPUTS ====================
+            document.querySelectorAll('.panel input').forEach(function(input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        var panel = this.closest('.panel');
+                        if (panel && panel.id === 'panel-launcher') {
+                            document.getElementById('genLauncherBtn').click();
+                        } else if (panel && panel.id === 'panel-applock') {
+                            document.getElementById('genApplockBtn').click();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>/body>
+</html>
